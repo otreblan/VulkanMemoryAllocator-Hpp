@@ -153,8 +153,6 @@ throwResultException(VULKAN_HPP_NAMESPACE::Result result, char const *message) {
     throw VULKAN_HPP_NAMESPACE::OutOfDateKHRError(message);
   case Result::eErrorIncompatibleDisplayKHR:
     throw VULKAN_HPP_NAMESPACE::IncompatibleDisplayKHRError(message);
-  case Result::eErrorValidationFailedEXT:
-    throw VULKAN_HPP_NAMESPACE::ValidationFailedEXTError(message);
   case Result::eErrorInvalidShaderNV:
     throw VULKAN_HPP_NAMESPACE::InvalidShaderNVError(message);
   case Result::eErrorImageUsageNotSupportedKHR:
