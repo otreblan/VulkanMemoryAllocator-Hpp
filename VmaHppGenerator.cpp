@@ -1910,6 +1910,7 @@ void generateHandles(const Source& source, Symbols& symbols) {
       using UniqueImage = VULKAN_HPP_NAMESPACE::UniqueHandle<VULKAN_HPP_NAMESPACE::Image, detail::Dispatcher>;
       $1
     #endif
+      using VULKAN_HPP_NAMESPACE::exchange;
 
       $2
 

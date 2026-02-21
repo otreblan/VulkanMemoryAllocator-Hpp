@@ -39,6 +39,7 @@ namespace VMA_HPP_NAMESPACE {
   using UniqueVirtualAllocation = VULKAN_HPP_NAMESPACE::UniqueHandle<VirtualAllocation, detail::Dispatcher>;
   using UniqueVirtualBlock = VULKAN_HPP_NAMESPACE::UniqueHandle<VirtualBlock, detail::Dispatcher>;
 #endif
+  using VULKAN_HPP_NAMESPACE::exchange;
 
   // wrapper class for handle VmaAllocator, see https://gpuopen-librariesandsdks.github.io/VulkanMemoryAllocator/html/struct_vma_allocator.html
   class Allocator {

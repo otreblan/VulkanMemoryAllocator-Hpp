@@ -95,7 +95,7 @@ jobs:
           cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_SMART_HANDLE"
           cmake --build build --clean-first
           
-          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_EXCEPTIONS -DVULKAN_HPP_USE_REFLECT"
+          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_EXCEPTIONS -DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE"
           cmake --build build --clean-first
           
           echo Building with latest Vulkan...
@@ -105,7 +105,7 @@ jobs:
           cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_SMART_HANDLE"
           cmake --build build --clean-first
           
-          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_EXCEPTIONS -DVULKAN_HPP_USE_REFLECT"
+          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_EXCEPTIONS -DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE"
           cmake --build build --clean-first
           
           mv VulkanMemoryAllocator/include/vk_mem_alloc.h include
