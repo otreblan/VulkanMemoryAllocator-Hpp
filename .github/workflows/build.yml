@@ -1,6 +1,12 @@
 name: Build
 on:
   workflow_dispatch:
+    inputs:
+      custom-vulkan:
+        description: Custom Vulkan
+        required: true
+        default: https://github.com/YaaZ/Vulkan-Hpp.git main
+        type: string
   workflow_call:
   pull_request:
   schedule:
@@ -27,7 +33,7 @@ jobs:
           { os: ubuntu-24.04, cxx: g++-14, c: gcc-14 },
           { os: windows-2025, name: msvc, cxx_flags: '//EHsc' },
           { os: windows-2025, name: msvc, cxx_flags: '//EHsc', modules: true, extra_flags: '-DVMA_HPP_SAMPLES_BUILD=OFF' }, # TODO Build samples when MSVC stops failing with ICE
-          { os: windows-2025, cxx: clang-cl, c: clang-cl, cxx_flags: '//EHsc' },
+          { os: windows-2025, cxx: clang-cl, c: clang-cl, cxx_flags: '/EHsc' },
           { os: windows-2025, cxx: c++, c: cc, name: gcc },
         ]
         standard: [ 11, 14, 17, 20, 23 ]
@@ -47,6 +53,8 @@ jobs:
           - env:
               cxx: clang++-17
             standard: 23
+    env:
+      compiler: ${{matrix.env.name || matrix.env.c}}
     steps:
       - name: Checkout
         uses: actions/checkout@v5.0.0
@@ -73,43 +81,66 @@ jobs:
           CMAKE_FIX=`which cmake`
           CMAKE_FIX="`dirname $CMAKE_FIX`/../share/cmake-4.1/Modules/Compiler/Clang-CXX-CXXImportStd.cmake"
           sed -i '' 's|\${_clang_modules_json_impl}.modules.json|/opt/homebrew/opt/llvm/lib/c++/libc++.modules.json|g' $CMAKE_FIX # https://gitlab.kitware.com/cmake/cmake/-/issues/25965#note_1523575
-      - name: Build
+      - name: Prepare build
         run: |
-          CXX_FLAGS="${{matrix.env.cxx_flags || ''}}"
+          cmake -B build -DFETCHCONTENT_SOURCE_DIR_VULKAN=@ -DVMA_HPP_GENERATOR_BUILD=OFF -DVMA_HPP_RUN_GENERATOR=OFF -DVMA_HPP_SAMPLES_BUILD=OFF &> /dev/null || true
+          MIN_VULKAN="v`cat build/CMakeCache.txt | grep ${{matrix.env.modules && 'VMA_HPP_VULKAN_MIN_MODULES' || 'VMA_HPP_VULKAN_MIN_HEADERS'}} | cut -d= -f2`"
+          git clone --bare --shallow-exclude=v1.4.326 https://github.com/KhronosGroup/Vulkan-Headers.git vulkan-headers.git
+          cd vulkan-headers.git
+          MAX_VULKAN="`git tag -l --sort="-v:refname" | grep --max-count 1 -o -E v[0-9]+\.[0-9]+\.[0-9]+`"
+          git worktree add --detach ../vulkan-$MIN_VULKAN $MIN_VULKAN
+          git worktree add --detach ../vulkan-$MAX_VULKAN $MAX_VULKAN || true
+          cd ..
+          echo "min-vulkan=$MIN_VULKAN" >> $GITHUB_ENV
+          echo "max-vulkan=$MAX_VULKAN" >> $GITHUB_ENV
+          
+          read -r -a CUSTOM_VULKAN <<< '${{inputs.custom-vulkan}}'
+          if [[ ${CUSTOM_VULKAN[1]} ]]; then
+            git clone --depth 1 -b "${CUSTOM_VULKAN[1]}" "${CUSTOM_VULKAN[0]}" vulkan-custom
+            (cd vulkan-custom && git submodule update --init --depth 1 Vulkan-Headers || true)
+            echo "${CUSTOM_VULKAN[0]}" | sed "s/^https:\/\///;s/^github\.com\///;s/\.git$//;s/^/custom-vulkan=/;s/$/:${CUSTOM_VULKAN[1]}/" >> $GITHUB_ENV
+          fi
+          
+          cat > build.sh <<'EOF'
+          #!/usr/bin/env bash
+          set -eo pipefail
+          CXX_FLAGS=(
+              ${{(contains(env.compiler, 'clang') || contains(env.compiler, 'gcc')) && '-Wno-nullability-completeness -Wno-deprecated-declarations' || ''}}
+              ${{matrix.env.cxx_flags || ''}}
+          )
+          CXX_FLAGS="${CXX_FLAGS[@]} $@"
           FLAGS=(
               -B build -G Ninja --fresh
+              -DFETCHCONTENT_SOURCE_DIR_VULKAN=vulkan-`basename -- $0`
               -DVMA_HPP_GENERATOR_BUILD=OFF
               -DVMA_HPP_RUN_GENERATOR=OFF
               -DCMAKE_CXX_STANDARD=${{matrix.standard}}
               -DCMAKE_BUILD_TYPE=Release
+              -DVULKAN_HEADERS_ENABLE_MODULE=${{matrix.env.modules && 'ON' || 'OFF'}}
+              -DVULKAN_HPP_BUILD_CXX_MODULE=${{matrix.env.modules && 'ON' || 'OFF'}}
+              ${{matrix.env.modules && '-DCMAKE_EXPERIMENTAL_CXX_IMPORT_STD=d0edc3af-4c50-42ea-a356-e2862fe7a444' || ''}}
               ${{matrix.env.cxx && format('-DCMAKE_CXX_COMPILER={0}', matrix.env.cxx)}}
               ${{matrix.env.c && format('-DCMAKE_C_COMPILER={0}', matrix.env.c)}}
               ${{matrix.env.linker_flags && format('-DCMAKE_EXE_LINKER_FLAGS=''{0}''', matrix.env.linker_flags)}}
-              ${{matrix.env.modules && '-DCMAKE_EXPERIMENTAL_CXX_IMPORT_STD=d0edc3af-4c50-42ea-a356-e2862fe7a444' || ''}}
               ${{matrix.env.extra_flags || ''}}
+              -DCMAKE_CXX_FLAGS="$CXX_FLAGS"
           )
-          
-          echo Building with minimal Vulkan...
-          FLAGS+=('-DVMA_HPP_VULKAN_REVISION=${{matrix.env.modules && 'min-modules' || 'min-headers'}}')
-          
-          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_SMART_HANDLE"
-          cmake --build build --clean-first
-          
-          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_EXCEPTIONS -DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE"
-          cmake --build build --clean-first
-          
-          echo Building with latest Vulkan...
-          unset 'FLAGS[${#FLAGS[@]}-1]'
-          FLAGS+=('-DVMA_HPP_VULKAN_REVISION=main')
-          
-          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_SMART_HANDLE"
-          cmake --build build --clean-first
-          
-          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS -DVULKAN_HPP_NO_EXCEPTIONS -DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE"
-          cmake --build build --clean-first
-          
-          mv VulkanMemoryAllocator/include/vk_mem_alloc.h include
-          cmake "${FLAGS[@]}" -DCMAKE_CXX_FLAGS="$CXX_FLAGS"
-          cmake --build build --clean-first
-          
+          rm -r build
+          cmake "${FLAGS[@]}"
+          cmake --build build
           ${{matrix.env.modules && 'ls build/include/CMakeFiles | grep VulkanMemoryAllocator-HppModule &> /dev/null || (echo "VulkanMemoryAllocator-HppModule was not built"; exit 1)'}}
+          EOF
+          chmod +x build.sh
+          echo "PATH=.:$PATH" >> $GITHUB_ENV
+          ln -s build.sh custom
+          ln -s build.sh $MIN_VULKAN
+          ln -s build.sh $MAX_VULKAN || true
+      - run: ${{env.min-vulkan}} -DVULKAN_HPP_NO_SMART_HANDLE
+      - run: ${{env.min-vulkan}} -DVULKAN_HPP_NO_EXCEPTIONS -DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE
+      - run: ${{env.max-vulkan}} -DVULKAN_HPP_NO_SMART_HANDLE
+      - run: ${{env.max-vulkan}} -DVULKAN_HPP_NO_EXCEPTIONS -DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE
+      - name: Run ${{env.max-vulkan}} (bundled VMA)
+        run: mv VulkanMemoryAllocator/include/vk_mem_alloc.h include && ${{env.max-vulkan}}
+      - name: Run ${{env.custom-vulkan}} (bundled VMA)
+        if: ${{ !cancelled() && env.custom-vulkan }}
+        run: custom

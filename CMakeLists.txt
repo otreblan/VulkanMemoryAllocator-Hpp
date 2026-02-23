@@ -15,10 +15,13 @@ option(VMA_HPP_RUN_GENERATOR     "Run the HPP generator"   ${PROJECT_IS_TOP_LEVE
 option(VMA_HPP_SAMPLES_BUILD     "Build samples"           ${PROJECT_IS_TOP_LEVEL})
 option(VMA_HPP_DO_UPDATE         "Update VMA submodule"    OFF)
 set(VMA_HPP_INPUT_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include/vk_mem_alloc.h" CACHE FILEPATH "Input vk_mem_alloc.h file")
-set(VMA_HPP_VULKAN_REVISION "main"                CACHE STRING "Vulkan-Headers revision")
-set(VMA_HPP_VMA_REVISION    "v${PROJECT_VERSION}" CACHE STRING "VulkanMemoryAllocator revision" FORCE)
 
 if (VMA_HPP_DO_UPDATE)
+    # VMA_HPP_VMA_REVISION can be overridden from the command line, but does not persist in cache
+    if (NOT DEFINED VMA_HPP_VMA_REVISION)
+        set(VMA_HPP_VMA_REVISION "v${PROJECT_VERSION}")
+    endif ()
+
     # Find Git.
     find_package(Git)
     if (NOT Git_FOUND)
@@ -37,25 +40,34 @@ if (VMA_HPP_DO_UPDATE)
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator" ERROR_QUIET)
 endif ()
 
-if (${VMA_HPP_VULKAN_REVISION} STREQUAL "system")
-    find_package(VulkanHeaders CONFIG)
-    if (NOT VulkanHeaders_FOUND)
-        find_package(Vulkan REQUIRED)
+if (NOT TARGET Vulkan::Headers AND NOT TARGET Vulkan::Hpp)
+    # Set up Vulkan targets.
+    # Use -DFETCHCONTENT_SOURCE_DIR_VULKAN=@ to use find_package, or pass a custom path
+    if ("${FETCHCONTENT_SOURCE_DIR_VULKAN}" STREQUAL "@")
+        find_package(VulkanHeaders CONFIG)
+        if (NOT VulkanHeaders_FOUND)
+            find_package(Vulkan REQUIRED)
+        endif ()
+    else ()
+        include(FetchContent)
+        FetchContent_Declare(
+                vulkan
+                GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
+                GIT_TAG main
+                GIT_SHALLOW TRUE
+        )
+        FetchContent_MakeAvailable(vulkan)
     endif ()
-else ()
-    if (${VMA_HPP_VULKAN_REVISION} STREQUAL "min-headers")
-        set(VMA_HPP_VULKAN_REVISION "v${VMA_HPP_VULKAN_MIN_HEADERS}" CACHE STRING "Vulkan-Headers revision" FORCE)
-    elseif (${VMA_HPP_VULKAN_REVISION} STREQUAL "min-modules")
-        set(VMA_HPP_VULKAN_REVISION "v${VMA_HPP_VULKAN_MIN_MODULES}" CACHE STRING "Vulkan-Headers revision" FORCE)
-    endif ()
-    include(FetchContent)
-    FetchContent_Declare(
-            vulkan
-            GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
-            GIT_TAG ${VMA_HPP_VULKAN_REVISION}
-            GIT_SHALLOW TRUE
-    )
-    FetchContent_MakeAvailable(vulkan)
+endif ()
+if (TARGET Vulkan::Hpp)
+    set(VMA_HPP_VULKAN_HEADERS Vulkan::Hpp)
+elseif (TARGET Vulkan::Headers)
+    set(VMA_HPP_VULKAN_HEADERS Vulkan::Headers)
+endif ()
+if (TARGET VulkanHppModule)
+    set(VMA_HPP_VULKAN_MODULE VulkanHppModule)
+elseif (TARGET Vulkan-HppModule)
+    set(VMA_HPP_VULKAN_MODULE Vulkan-HppModule)
 endif ()
 
 add_subdirectory(VulkanMemoryAllocator)
@@ -131,14 +143,14 @@ endif ()
 if (VMA_HPP_SAMPLES_BUILD)
     if (TARGET VulkanMemoryAllocator-HppModule)
         add_library(VulkanMemoryAllocator-Hpp-Samples STATIC)
-        target_link_libraries(VulkanMemoryAllocator-Hpp-Samples PUBLIC VulkanMemoryAllocator-HppModule Vulkan::HppModule)
+        target_link_libraries(VulkanMemoryAllocator-Hpp-Samples PUBLIC VulkanMemoryAllocator-HppModule ${VMA_HPP_VULKAN_MODULE})
         target_compile_definitions(VulkanMemoryAllocator-Hpp-Samples PUBLIC USE_MODULES)
         target_compile_definitions(VulkanMemoryAllocator-HppModule PUBLIC VK_NO_PROTOTYPES)
-        target_compile_definitions(Vulkan-HppModule PUBLIC VK_NO_PROTOTYPES)
+        target_compile_definitions(${VMA_HPP_VULKAN_MODULE} PUBLIC VK_NO_PROTOTYPES)
         target_compile_features(VulkanMemoryAllocator-Hpp-Samples PUBLIC cxx_std_23)
     else ()
         add_library(VulkanMemoryAllocator-Hpp-Samples INTERFACE)
-        target_link_libraries(VulkanMemoryAllocator-Hpp-Samples INTERFACE VulkanMemoryAllocator-Hpp GPUOpen::VulkanMemoryAllocator Vulkan::Headers)
+        target_link_libraries(VulkanMemoryAllocator-Hpp-Samples INTERFACE VulkanMemoryAllocator-Hpp GPUOpen::VulkanMemoryAllocator ${VMA_HPP_VULKAN_HEADERS})
         target_compile_definitions(VulkanMemoryAllocator-Hpp-Samples INTERFACE VK_NO_PROTOTYPES)
     endif ()
 

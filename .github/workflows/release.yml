@@ -19,7 +19,7 @@ jobs:
       - name: Package
         id: package
         run: |
-          cmake -B build || true
+          cmake -B build -DFETCHCONTENT_SOURCE_DIR_VULKAN=@ -DVMA_HPP_GENERATOR_BUILD=OFF -DVMA_HPP_RUN_GENERATOR=OFF -DVMA_HPP_SAMPLES_BUILD=OFF &> /dev/null || true
           VERSION=`cat build/CMakeCache.txt | grep VMA_HPP_PROJECT_VERSION | cut -d= -f2`
           echo "VMA version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT

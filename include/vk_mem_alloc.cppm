@@ -23,6 +23,9 @@ export namespace VMA_HPP_NAMESPACE {
   using VMA_HPP_NAMESPACE::operator>=;
   using VMA_HPP_NAMESPACE::operator==;
   using VMA_HPP_NAMESPACE::operator!=;
+#ifdef VULKAN_HPP_HAS_SPACESHIP_OPERATOR
+  using VMA_HPP_NAMESPACE::operator<=>;
+#endif
   using VMA_HPP_NAMESPACE::AllocatorCreateFlagBits;
   using VMA_HPP_NAMESPACE::AllocatorCreateFlags;
   using VMA_HPP_NAMESPACE::MemoryUsage;
