@@ -1,4 +1,4 @@
-name: Generate Headers
+name: Generate headers
 on:
   pull_request:
   push:
@@ -13,7 +13,7 @@ jobs:
         with:
           submodules: true
           fetch-tags: true
-      - name: Generate Headers
+      - name: Generate headers
         run: |
           git fetch --unshallow --tags
           cmake -B build -DVMA_HPP_GENERATOR_BUILD=ON -DVMA_HPP_RUN_GENERATOR=ON -DVMA_HPP_DO_UPDATE=ON -DVMA_HPP_SAMPLES_BUILD=OFF

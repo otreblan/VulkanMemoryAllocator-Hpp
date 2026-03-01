@@ -15,20 +15,17 @@ jobs:
         uses: actions/checkout@v5.0.0
         with:
           submodules: true
-          fetch-tags: true
       - name: Package
         id: package
         run: |
-          cmake -B build -DFETCHCONTENT_SOURCE_DIR_VULKAN=@ -DVMA_HPP_GENERATOR_BUILD=OFF -DVMA_HPP_RUN_GENERATOR=OFF -DVMA_HPP_SAMPLES_BUILD=OFF &> /dev/null || true
+          (cd include && cmake -B ../build)
           VERSION=`cat build/CMakeCache.txt | grep VMA_HPP_PROJECT_VERSION | cut -d= -f2`
-          echo "VMA version: $VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" | tee -a $GITHUB_OUTPUT
 
           git fetch --unshallow --tags --recurse-submodules=no
-          BUILD=`git tag -l --sort=-version:refname | grep $VERSION | head -n 1 | cut -d+ -f2`
+          BUILD=`git ls-remote --tags --sort='-v:refname' origin "refs/tags/v$VERSION*" | head -n 1 | cut -d+ -f2`
           BUILD=$((BUILD+1))
-          echo "Build number: $BUILD"
-          echo "build=$BUILD" >> $GITHUB_OUTPUT
+          echo "build=$BUILD" | tee -a $GITHUB_OUTPUT
 
           cp VulkanMemoryAllocator/include/vk_mem_alloc.h include
           mv include VulkanMemoryAllocator-Hpp
