@@ -4,12 +4,13 @@ on:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+  generate:
+    uses: ./.github/workflows/generate.yml
   release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    needs:
-      build
+    needs: [build, generate]
     steps:
       - name: Checkout
         uses: actions/checkout@v5.0.0
@@ -22,12 +23,11 @@ jobs:
           VERSION=`cat build/CMakeCache.txt | grep VMA_HPP_PROJECT_VERSION | cut -d= -f2`
           echo "version=$VERSION" | tee -a $GITHUB_OUTPUT
 
-          git fetch --unshallow --tags --recurse-submodules=no
           BUILD=`git ls-remote --tags --sort='-v:refname' origin "refs/tags/v$VERSION*" | head -n 1 | cut -d+ -f2`
           BUILD=$((BUILD+1))
           echo "build=$BUILD" | tee -a $GITHUB_OUTPUT
 
-          cp VulkanMemoryAllocator/include/vk_mem_alloc.h include
+          mv VulkanMemoryAllocator/include/vk_mem_alloc.h include
           mv include VulkanMemoryAllocator-Hpp
           tar czf VulkanMemoryAllocator-Hpp-$VERSION.tar.gz VulkanMemoryAllocator-Hpp
       - name: Release

@@ -1,5 +1,6 @@
 name: Generate headers
 on:
+  workflow_call:
   pull_request:
   push:
     branches:
@@ -12,10 +13,9 @@ jobs:
         uses: actions/checkout@v5.0.0
         with:
           submodules: true
-          fetch-tags: true
       - name: Generate headers
         run: |
-          git fetch --unshallow --tags
-          cmake -B build -DVMA_HPP_GENERATOR_BUILD=ON -DVMA_HPP_RUN_GENERATOR=ON -DVMA_HPP_DO_UPDATE=ON -DVMA_HPP_SAMPLES_BUILD=OFF
-          cmake --build build
+          cmake -B build -DFETCHCONTENT_SOURCE_DIR_VULKAN=@ \
+            -DVMA_HPP_GENERATOR_BUILD=ON -DVMA_HPP_RUN_GENERATOR=ON -DVMA_HPP_DO_UPDATE=ON -DVMA_HPP_SAMPLES_BUILD=OFF
+          cmake --build build --target GenerateVmaHpp
           git diff --exit-code

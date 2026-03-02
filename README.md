@@ -9,7 +9,16 @@ consistent and compatible with Vulkan C++ bindings ([Vulkan-Hpp](https://github.
 #### Requirements
 
 - C++11 or newer
-- [Vulkan](https://github.com/KhronosGroup/Vulkan-Headers) **<!--VK_HEADERS-->1.4.327<!--/VK_HEADERS-->** (headers) / **<!--VK_MODULES-->1.4.344<!--/VK_MODULES-->** (module) or newer
+- <details>
+  <summary><a href="https://github.com/KhronosGroup/Vulkan-Headers">Vulkan</a> <b><!--MIN_VK-->1.4.327<!--/MIN_VK--></b> or newer <sup>(?)</sup></summary><!--MIN_VK_TABLE-->
+
+    `​ ​ ​ ​ ​Min Vulkan​ ​ ​ ​ ​` `​ ​Tested configurations​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
+    `#include` `​ ​ ​import` `​ ​Flags​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
+    `​ ​1.4.327` `​ ​1.4.344` `​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
+    `​ ​1.4.327` `​ ​1.4.344` `-DVULKAN_HPP_NO_EXCEPTIONS​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
+    `​ ​1.4.327` `​ ​1.4.344` `-DVULKAN_HPP_NO_SMART_HANDLE​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
+    `​ ​1.4.327` `​ ​1.4.344` `-DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE​ ​`<br>
+  <!--/MIN_VK_TABLE--></details>
 - [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
   - *[GitHub releases](https://github.com/YaaZ/VulkanMemoryAllocator-Hpp/releases) is the recommended way to get VMA-Hpp,
     they already include a compatible `vk_mem_alloc.h` header*

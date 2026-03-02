@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.8...3.30 FATAL_ERROR)
 
 project(VulkanMemoryAllocator-Hpp-Generator VERSION 3.3.0 LANGUAGES CXX)
 
-set(VMA_HPP_VULKAN_MIN_HEADERS "1.4.327" CACHE INTERNAL "Minimal Vulkan-Headers revision (headers)")
-set(VMA_HPP_VULKAN_MIN_MODULES "1.4.344" CACHE INTERNAL "Minimal Vulkan-Headers revision (modules)")
-
 if (CMAKE_VERSION VERSION_LESS "3.21")
     # https://cmake.org/cmake/help/latest/variable/PROJECT_IS_TOP_LEVEL.html
     string(COMPARE EQUAL ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR} PROJECT_IS_TOP_LEVEL)
@@ -17,27 +14,7 @@ option(VMA_HPP_DO_UPDATE         "Update VMA submodule"    OFF)
 set(VMA_HPP_INPUT_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include/vk_mem_alloc.h" CACHE FILEPATH "Input vk_mem_alloc.h file")
 
 if (VMA_HPP_DO_UPDATE)
-    # VMA_HPP_VMA_REVISION can be overridden from the command line, but does not persist in cache
-    if (NOT DEFINED VMA_HPP_VMA_REVISION)
-        set(VMA_HPP_VMA_REVISION "v${PROJECT_VERSION}")
-    endif ()
-
-    # Find Git.
-    find_package(Git)
-    if (NOT Git_FOUND)
-        message(FATAL_ERROR "Git not found. VMA_HPP_DO_UPDATE is not available.")
-    endif ()
-
-    # Init the submodule.
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" COMMAND_ERROR_IS_FATAL ANY)
-
-    # Checkout proper revision.
-    message(STATUS "Updating VulkanMemoryAllocator submodule to ${VMA_HPP_VMA_REVISION}")
-    execute_process(COMMAND ${GIT_EXECUTABLE} -c advice.detachedHead=false checkout "${VMA_HPP_VMA_REVISION}"
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator" COMMAND_ERROR_IS_FATAL ANY)
-    execute_process(COMMAND ${GIT_EXECUTABLE} pull
-            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator" ERROR_QUIET)
+    include(tools/UpdateSubmodule.cmake)
 endif ()
 
 if (NOT TARGET Vulkan::Headers AND NOT TARGET Vulkan::Hpp)
@@ -46,7 +23,7 @@ if (NOT TARGET Vulkan::Headers AND NOT TARGET Vulkan::Hpp)
     if ("${FETCHCONTENT_SOURCE_DIR_VULKAN}" STREQUAL "@")
         find_package(VulkanHeaders CONFIG)
         if (NOT VulkanHeaders_FOUND)
-            find_package(Vulkan REQUIRED)
+            find_package(Vulkan)
         endif ()
     else ()
         include(FetchContent)
@@ -78,41 +55,14 @@ if (NOT ${PROJECT_VERSION} STREQUAL ${VMA_HPP_PROJECT_VERSION})
 endif ()
 
 if (VMA_HPP_DO_UPDATE)
-    # Find VMA version in the VMA header.
-    file(READ "${VMA_HPP_INPUT_HEADER}" VMA_HPP_VMA_SOURCE)
-    string(REGEX MATCH "<b>Version\\s*([^<]+)\\s*</b>" _ ${VMA_HPP_VMA_SOURCE})
-    string(STRIP ${CMAKE_MATCH_1} VMA_HPP_VMA_VERSION)
-
-    # Update versions in the README.
-    message(STATUS "Updating README with VMA ${VMA_HPP_VMA_VERSION} and Vulkan ${VMA_HPP_VULKAN_MIN_HEADERS} / ${VMA_HPP_VULKAN_MIN_MODULES}")
-    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/README.md" VMA_HPP_README)
-    string(REPLACE ";" "\\;" VMA_HPP_README "${VMA_HPP_README}") # Do not mess up semicolons in the README
-    string(REGEX REPLACE "<!--VER-->[^<]*<!--/VER-->" "<!--VER-->${VMA_HPP_VMA_VERSION}<!--/VER-->" VMA_HPP_README "${VMA_HPP_README}")
-    string(REGEX REPLACE "<!--VK_HEADERS-->[^<]*<!--/VK_HEADERS-->" "<!--VK_HEADERS-->${VMA_HPP_VULKAN_MIN_HEADERS}<!--/VK_HEADERS-->" VMA_HPP_README "${VMA_HPP_README}")
-    string(REGEX REPLACE "<!--VK_MODULES-->[^<]*<!--/VK_MODULES-->" "<!--VK_MODULES-->${VMA_HPP_VULKAN_MIN_MODULES}<!--/VK_MODULES-->" VMA_HPP_README "${VMA_HPP_README}")
-    file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/README.md" ${VMA_HPP_README})
-
-    # Generate "imported" utility header.
-    set(VMA_HPP_IMPORTED_HEADER "// Generated from the list of VMA-Hpp headers (vk_mem_alloc*.hpp).
-// See https://clang.llvm.org/docs/StandardCPlusPlusModules.html#providing-a-header-to-skip-parsing-redundant-headers")
-    file(GLOB VMA_HPP_HEADER_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/include/vk_mem_alloc*.hpp")
-    foreach(VMA_HPP_HEADER_FILE ${VMA_HPP_HEADER_FILES})
-        if (NOT ${VMA_HPP_HEADER_FILE} STREQUAL "vk_mem_alloc_imported.hpp" AND
-            NOT ${VMA_HPP_HEADER_FILE} STREQUAL "vk_mem_alloc_static_assertions.hpp")
-            string(REGEX MATCH "vk_mem_alloc(.*)\.hpp" _ ${VMA_HPP_HEADER_FILE})
-            string(TOUPPER "${CMAKE_MATCH_1}" VMA_HPP_HEADER_GUARD)
-            string(APPEND VMA_HPP_IMPORTED_HEADER "
-
-#ifndef VULKAN_MEMORY_ALLOCATOR${VMA_HPP_HEADER_GUARD}_HPP
-#define VULKAN_MEMORY_ALLOCATOR${VMA_HPP_HEADER_GUARD}_HPP
-#endif")
-        endif ()
-    endforeach()
-    file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/include/vk_mem_alloc_imported.hpp" ${VMA_HPP_IMPORTED_HEADER})
+    function(generate_files)
+        include(tools/GenerateFiles.cmake)
+    endfunction()
+    generate_files()
 endif ()
 
 if (VMA_HPP_GENERATOR_BUILD)
-    add_executable(VmaHppGenerator VmaHppGenerator.cpp)
+    add_executable(VmaHppGenerator tools/VmaHppGenerator.cpp)
     set_property(TARGET VmaHppGenerator PROPERTY CXX_STANDARD 17)
     set_property(TARGET VmaHppGenerator PROPERTY CXX_STANDARD_REQUIRED ON)
     set_property(TARGET VmaHppGenerator PROPERTY CXX_EXTENSIONS OFF)
