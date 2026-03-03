@@ -25,9 +25,6 @@ import vulkan;
 #define VMA_HPP_NAMESPACE_STRING VULKAN_HPP_STRINGIFY(VMA_HPP_NAMESPACE)
 #define VMA_HPP_RAII_NAMESPACE_STRING VULKAN_HPP_STRINGIFY(VMA_HPP_NAMESPACE::VMA_HPP_RAII_NAMESPACE)
 
-#if defined( VULKAN_HPP_HAS_SPACESHIP_OPERATOR )
-#endif
-
 // Workaround for breaking changes in Vulkan-Hpp:
 // https://github.com/KhronosGroup/Vulkan-Hpp/commit/a0a4c22975c89f70202542cc52d0f182db296002
 // Just add dummy operators, so that using declarations would always compile.
