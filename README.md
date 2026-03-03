@@ -12,13 +12,14 @@ consistent and compatible with Vulkan C++ bindings ([Vulkan-Hpp](https://github.
 - <details>
   <summary><a href="https://github.com/KhronosGroup/Vulkan-Headers">Vulkan</a> <b><!--MIN_VK-->1.4.327<!--/MIN_VK--></b> or newer <sup>(?)</sup></summary><!--MIN_VK_TABLE-->
 
-    `​ ​ ​ ​ ​Min Vulkan​ ​ ​ ​ ​` `​ ​Tested configurations​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
-    `#include` `​ ​ ​import` `​ ​Flags​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
-    `​ ​1.4.327` `​ ​1.4.344` `​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
-    `​ ​1.4.327` `​ ​1.4.344` `-DVULKAN_HPP_NO_EXCEPTIONS​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
-    `​ ​1.4.327` `​ ​1.4.344` `-DVULKAN_HPP_NO_SMART_HANDLE​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​ ​`<br>
-    `​ ​1.4.327` `​ ​1.4.344` `-DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE​ ​`<br>
-  <!--/MIN_VK_TABLE--></details>
+  <table>
+    <tr><th colspan='2'>Minimal Vulkan</th><th>Tested configurations</th></tr>
+    <tr><th>#include</th><th>import</th><th>Flags</th></tr>
+    <tr><td>1.4.327</td><td>1.4.344</td><td></td></tr>
+    <tr><td>1.4.327</td><td>1.4.344</td><td>-DVULKAN_HPP_NO_EXCEPTIONS</td></tr>
+    <tr><td>1.4.327</td><td>1.4.344</td><td>-DVULKAN_HPP_NO_SMART_HANDLE</td></tr>
+    <tr><td>1.4.327</td><td>1.4.344</td><td>-DVULKAN_HPP_USE_REFLECT -DVULKAN_HPP_HANDLES_MOVE_EXCHANGE</td></tr>
+  </table><!--/MIN_VK_TABLE--></details>
 - [VulkanMemoryAllocator](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator)
   - *[GitHub releases](https://github.com/YaaZ/VulkanMemoryAllocator-Hpp/releases) is the recommended way to get VMA-Hpp,
     they already include a compatible `vk_mem_alloc.h` header*

@@ -1,41 +1,21 @@
 
-function(pad_configuration_table_entry RESULT INPUT LENGTH)
-    string(LENGTH "${INPUT}" L)
-    math(EXPR L "${LENGTH} - ${L}")
-    string(REPEAT "~" ${L} R)
-    set(${RESULT} "${R}" PARENT_SCOPE)
-endfunction()
-
 function(generate_configuration_table)
     # Find testing configurations in the GH workflow.
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/.github/workflows/build-custom-vulkan.yml" WORKFLOW_SOURCE)
     set(REGEX "build +\\$\{{ *env\.vk *\\|\\| *env\.modules *&& *'v([^']+)' *\\|\\| *'v([^']+)'}} *([^\n$]*)")
     string(REGEX MATCHALL "${REGEX}" CONFIGS ${WORKFLOW_SOURCE})
-    # Prepare padded line segments.
-    set(CONFIG_LINES " `~~~~Min Vulkan~~~~` `~Tested configurations;`#include` `~~import` `~Flags")
-    set(LONGEST_LINE 0)
+    # Build a table of configurations.
+    set(CONFIG_TABLE "\n\n  <table>
+    <tr><th colspan='2'>Minimal Vulkan</th><th>Tested configurations</th></tr>
+    <tr><th>#include</th><th>import</th><th>Flags</th></tr>")
     foreach(CONFIG ${CONFIGS})
         string(REGEX MATCH "${REGEX}" _ ${CONFIG})
-        pad_configuration_table_entry(PAD_1 "${CMAKE_MATCH_1}" 8)
-        pad_configuration_table_entry(PAD_2 "${CMAKE_MATCH_2}" 8)
-        string(LENGTH "${CMAKE_MATCH_3}" L)
-        if(L GREATER LONGEST_LINE)
-            set(LONGEST_LINE ${L})
-        elseif (L EQUAL 0)
+        if ("${CMAKE_MATCH_3}" STREQUAL "")
             set(MIN_VULKAN "${CMAKE_MATCH_2}" PARENT_SCOPE) # Remember Vulkan version for default configuration.
         endif()
-        list(APPEND CONFIG_LINES "`${PAD_2}${CMAKE_MATCH_2}` `${PAD_1}${CMAKE_MATCH_1}` `${CMAKE_MATCH_3}")
+        string(APPEND CONFIG_TABLE "\n    <tr><td>${CMAKE_MATCH_2}</td><td>${CMAKE_MATCH_1}</td><td>${CMAKE_MATCH_3}</td></tr>")
     endforeach()
-    # Build a table of configurations.
-    set(CONFIG_TABLE "\n\n ")
-    foreach(CONFIG_LINE ${CONFIG_LINES})
-        pad_configuration_table_entry(PAD "${CONFIG_LINE}" "24 + ${LONGEST_LINE}")
-        string(APPEND CONFIG_TABLE "  ${CONFIG_LINE}${PAD}`<br>\n  ")
-    endforeach()
-    # Replace placeholders with padding sequences.
-    string(REPLACE "~" "​ ​" CONFIG_TABLE "${CONFIG_TABLE}")
-    string(REPLACE "​​" "​" CONFIG_TABLE "${CONFIG_TABLE}")
-    set(CONFIG_TABLE "${CONFIG_TABLE}" PARENT_SCOPE)
+    set(CONFIG_TABLE "${CONFIG_TABLE}\n  </table>" PARENT_SCOPE)
 endfunction()
 generate_configuration_table()
 
